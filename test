@@ -1,0 +1,32 @@
+# tests/test_reconciliation.py
+import unittest
+from app.core.models import Asset
+from app.core.reconciliation import reconcile_assets
+
+class TestReconciliation(unittest.TestCase):
+
+    def setUp(self):
+        """Set up mock data for tests."""
+        self.mock_data = {
+            "CMDB": [
+                Asset("host-a", "CMDB"), Asset("host-b", "CMDB"), Asset("host-c", "CMDB")
+            ],
+            "CrowdStrike": [
+                Asset("host-a", "CrowdStrike"), Asset("host-d", "CrowdStrike")
+            ]
+        }
+
+    def test_reconciliation_finds_missing(self):
+        """Test if missing assets in CrowdStrike are correctly identified."""
+        report = reconcile_assets(self.mock_data, master_source="CMDB")
+        missing = report["details"]["CrowdStrike"]["missing_from_master"]
+        self.assertEqual(missing, ["host-b", "host-c"])
+
+    def test_reconciliation_finds_orphans(self):
+        """Test if assets only in CrowdStrike (orphans) are correctly identified."""
+        report = reconcile_assets(self.mock_data, master_source="CMDB")
+        orphans = report["details"]["CrowdStrike"]["found_only_in_source"]
+        self.assertEqual(orphans, ["host-d"])
+
+if __name__ == '__main__':
+    unittest.main()

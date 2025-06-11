@@ -1,0 +1,12 @@
+hostname,agent_version,last_seen,status,platform,policy_name,sensor_version
+web-server-01,6.42.15907,2024-01-30 08:00:00,Online,Linux,Production_Linux_Policy,6.42.15907
+web-server-02,6.42.15907,2024-01-30 08:05:00,Online,Linux,Production_Linux_Policy,6.42.15907
+db-server-01,6.42.15907,2024-01-30 07:30:00,Online,Windows,Production_Windows_Policy,6.42.15907
+app-server-01,6.42.15907,2024-01-30 09:00:00,Online,Linux,Production_Linux_Policy,6.42.15907
+app-server-02,6.41.15800,2024-01-28 10:00:00,Offline,Linux,Production_Linux_Policy,6.41.15800
+dev-workstation-01,6.42.15907,2024-01-30 08:30:00,Online,Windows,Development_Policy,6.42.15907
+test-server-01,6.42.15907,2024-01-30 08:45:00,Online,Linux,Testing_Policy,6.42.15907
+monitoring-server-01,6.42.15907,2024-01-30 09:15:00,Online,Linux,Security_Policy,6.42.15907
+rogue-laptop-01,6.40.15600,2024-01-25 14:00:00,Offline,Windows,Unknown_Policy,6.40.15600
+decommissioned-srv-01,6.35.14000,2023-10-15 12:00:00,Offline,Linux,Legacy_Policy,6.35.14000
+temp-contractor-01,6.42.15907,2024-01-30 10:00:00,Online,macOS,Contractor_Policy,6.42.15907

@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssetCon - CMDB Reconciliation Dashboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        header h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .timestamp {
+            text-align: center;
+            opacity: 0.9;
+            font-size: 0.9em;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .sankey-container {
+            grid-column: span 2;
+            height: 500px;
+            position: relative;
+        }
+        
+        #sankey {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .diff-container {
+            grid-column: span 2;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .diff-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .source-selector {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .source-btn {
+            padding: 8px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .source-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        
+        .source-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .diff-view {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            background: #f8f8f8;
+            border-radius: 5px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .view-btn {
+            padding: 6px 15px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .view-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .asset-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        .asset-table th {
+            background: #f1f3f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+            position: sticky;
+            top: 0;
+        }
+        
+        .asset-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .asset-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .asset-missing {
+            background: #ffeef0;
+        }
+        
+        .asset-orphaned {
+            background: #e6ffed;
+        }
+        
+        .asset-status {
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .status-missing {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .status-orphaned {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-matched {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .diff-line {
+            padding: 3px 10px;
+            margin: 1px 0;
+            white-space: pre;
+            position: relative;
+        }
+        
+        .diff-line.added {
+            background: #e6ffed;
+            color: #24292e;
+        }
+        
+        .diff-line.added::before {
+            content: '+';
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .diff-line.removed {
+            background: #ffeef0;
+            color: #24292e;
+        }
+        
+        .diff-line.removed::before {
+            content: '-';
+            position: absolute;
+            left: 0;
+            color: #d73a49;
+            font-weight: bold;
+        }
+        
+        .diff-line.context {
+            color: #586069;
+            background: #f6f8fa;
+        }
+        
+        .diff-section {
+            margin: 20px 0;
+        }
+        
+        .diff-section-header {
+            background: #f1f8ff;
+            border: 1px solid #c8e1ff;
+            padding: 8px 15px;
+            margin: 10px 0;
+            border-radius: 3px;
+            color: #0366d6;
+            font-weight: 600;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            flex: 1;
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 3em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 14px;
+            z-index: 1000;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>AssetCon CMDB Reconciliation</h1>
+            <div class="timestamp">Generated on: <span id="timestamp"></span></div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="stats" id="stats-container">
+            <!-- Stats will be populated by JavaScript -->
+        </div>
+        
+        <div class="main-content">
+            <div class="card sankey-container">
+                <h2 style="margin-bottom: 20px;">Asset Flow Visualization</h2>
+                <div id="sankey"></div>
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #667eea;"></div>
+                        <span>ServiceNow CMDB (Master)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #28a745;"></div>
+                        <span>Matched Assets</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #dc3545;"></div>
+                        <span>Missing Assets</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffc107;"></div>
+                        <span>Orphaned Assets</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card diff-container">
+                <div class="diff-header">
+                    <h2>Asset Comparison</h2>
+                    <div class="source-selector" id="source-selector">
+                        <!-- Source buttons will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="view-toggle">
+                    <button class="view-btn active" onclick="setViewMode('diff')">Diff View</button>
+                    <button class="view-btn" onclick="setViewMode('table')">Table View</button>
+                </div>
+                <div id="diff-view" class="diff-view">
+                    <div class="loading">Select a source to view asset differences</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+    
+    <script>
+        // Data will be injected by the server
+        const reconciliationData = <!-- RECONCILIATION_DATA -->;
+        
+        let currentSource = null;
+        let currentViewMode = 'diff';
+        
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set timestamp
+            document.getElementById('timestamp').textContent = new Date().toLocaleString();
+            
+            // Render stats
+            renderStats();
+            
+            // Render Sankey diagram
+            renderSankey();
+            
+            // Setup source selector
+            setupSourceSelector();
+        });
+        
+        function renderStats() {
+            const statsContainer = document.getElementById('stats-container');
+            const summary = reconciliationData.summary;
+            
+            // Calculate totals
+            let totalMissing = 0;
+            let totalOrphaned = 0;
+            let totalSources = 0;
+            
+            for (const [source, details] of Object.entries(reconciliationData.details)) {
+                totalMissing += details.count_missing_from_master;
+                totalOrphaned += details.count_found_only_in_source;
+                totalSources++;
+            }
+            
+            const stats = [
+                { value: summary.total_master_assets, label: 'Total CMDB Assets' },
+                { value: totalSources, label: 'Data Sources' },
+                { value: totalMissing, label: 'Total Missing Assets' },
+                { value: totalOrphaned, label: 'Total Orphaned Assets' }
+            ];
+            
+            statsContainer.innerHTML = stats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-value">${stat.value}</div>
+                    <div class="stat-label">${stat.label}</div>
+                </div>
+            `).join('');
+        }
+        
+        function renderSankey() {
+            const container = d3.select("#sankey");
+            const width = container.node().getBoundingClientRect().width;
+            const height = 400;
+            const margin = { top: 10, right: 10, bottom: 10, left: 10 };
+            
+            // Clear existing content
+            container.selectAll("*").remove();
+            
+            const svg = container.append("svg")
+                .attr("width", width)
+                .attr("height", height);
+            
+            // Prepare nodes and links
+            const nodes = [];
+            const links = [];
+            
+            // Add master node
+            nodes.push({ id: "master", name: reconciliationData.summary.master_source });
+            
+            let nodeIndex = 1;
+            for (const [source, details] of Object.entries(reconciliationData.details)) {
+                // Add source node
+                nodes.push({ id: `source_${nodeIndex}`, name: source });
+                
+                // Add matched assets flow
+                const matched = details.assets_found - details.count_found_only_in_source;
+                if (matched > 0) {
+                    links.push({
+                        source: 0, // master index
+                        target: nodeIndex,
+                        value: matched,
+                        type: "matched"
+                    });
+                }
+                
+                // Add missing assets node and flow
+                if (details.count_missing_from_master > 0) {
+                    const missingNodeId = nodes.length;
+                    nodes.push({ id: `missing_${nodeIndex}`, name: `Missing in ${source}` });
+                    links.push({
+                        source: 0, // master index
+                        target: missingNodeId,
+                        value: details.count_missing_from_master,
+                        type: "missing"
+                    });
+                }
+                
+                // Add orphaned assets node and flow
+                if (details.count_found_only_in_source > 0) {
+                    const orphanedNodeId = nodes.length;
+                    nodes.push({ id: `orphaned_${nodeIndex}`, name: `Orphaned in ${source}` });
+                    links.push({
+                        source: nodeIndex,
+                        target: orphanedNodeId,
+                        value: details.count_found_only_in_source,
+                        type: "orphaned"
+                    });
+                }
+                
+                nodeIndex++;
+            }
+            
+            // Create Sankey generator
+            const sankey = d3.sankey()
+                .nodeWidth(20)
+                .nodePadding(20)
+                .extent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]]);
+            
+            // Generate the Sankey diagram
+            const { nodes: sankeyNodes, links: sankeyLinks } = sankey({
+                nodes: nodes.map(d => Object.assign({}, d)),
+                links: links.map(d => Object.assign({}, d))
+            });
+            
+            // Add links
+            const link = svg.append("g")
+                .selectAll(".link")
+                .data(sankeyLinks)
+                .join("g")
+                .attr("class", "link");
+            
+            link.append("path")
+                .attr("d", d3.sankeyLinkHorizontal())
+                .attr("stroke", d => {
+                    if (d.type === "matched") return "#28a745";
+                    if (d.type === "missing") return "#dc3545";
+                    if (d.type === "orphaned") return "#ffc107";
+                    return "#999";
+                })
+                .attr("stroke-width", d => Math.max(1, d.width))
+                .attr("fill", "none")
+                .attr("opacity", 0.5)
+                .style("cursor", "pointer")
+                .on("mouseover", function(event, d) {
+                    d3.select(this).attr("opacity", 0.8);
+                    showTooltip(event, `${d.value} assets - Click to view`);
+                })
+                .on("mouseout", function() {
+                    d3.select(this).attr("opacity", 0.5);
+                    hideTooltip();
+                })
+                .on("click", function(event, d) {
+                    // Find the source name from the link
+                    const sourceName = sankeyNodes[d.target].name.includes("Missing") || 
+                                     sankeyNodes[d.target].name.includes("Orphaned") ?
+                                     sankeyNodes[d.source].name : sankeyNodes[d.target].name;
+                    
+                    // Show diff for this source
+                    if (sourceName !== reconciliationData.summary.master_source) {
+                        showDiff(sourceName);
+                    }
+                });
+            
+            // Add nodes
+            const node = svg.append("g")
+                .selectAll(".node")
+                .data(sankeyNodes)
+                .join("g")
+                .attr("class", "node");
+            
+            node.append("rect")
+                .attr("x", d => d.x0)
+                .attr("y", d => d.y0)
+                .attr("height", d => d.y1 - d.y0)
+                .attr("width", d => d.x1 - d.x0)
+                .attr("fill", d => {
+                    if (d.id === "master") return "#667eea";
+                    if (d.id.includes("missing")) return "#dc3545";
+                    if (d.id.includes("orphaned")) return "#ffc107";
+                    return "#6c757d";
+                })
+                .attr("stroke", "#000")
+                .attr("stroke-width", 1);
+            
+            node.append("text")
+                .attr("x", d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
+                .attr("y", d => (d.y1 + d.y0) / 2)
+                .attr("dy", "0.35em")
+                .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+                .text(d => d.name)
+                .style("font-size", "12px");
+        }
+        
+        function setupSourceSelector() {
+            const selector = document.getElementById('source-selector');
+            
+            for (const source of Object.keys(reconciliationData.details)) {
+                const btn = document.createElement('button');
+                btn.className = 'source-btn';
+                btn.textContent = source;
+                btn.onclick = () => showDiff(source);
+                selector.appendChild(btn);
+            }
+        }
+        
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase().includes(mode));
+            });
+            
+            if (currentSource) {
+                showDiff(currentSource);
+            }
+        }
+        
+        function showDiff(source) {
+            currentSource = source;
+            
+            // Update active button
+            document.querySelectorAll('.source-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === source);
+            });
+            
+            const details = reconciliationData.details[source];
+            const diffView = document.getElementById('diff-view');
+            
+            if (currentViewMode === 'table') {
+                showTableView(source, details, diffView);
+            } else {
+                showDiffView(source, details, diffView);
+            }
+        }
+        
+        function showDiffView(source, details, diffView) {
+            let html = '';
+            
+            // Summary section
+            html += `
+                <div class="diff-section">
+                    <div class="diff-section-header">
+                        Comparing ${reconciliationData.summary.master_source} ↔ ${source}
+                    </div>
+                    <div class="diff-line context">Total assets in ${reconciliationData.summary.master_source}: ${reconciliationData.summary.total_master_assets}</div>
+                    <div class="diff-line context">Total assets in ${source}: ${details.assets_found}</div>
+                    <div class="diff-line context">Matched assets: ${details.count_matched || (details.assets_found - details.count_found_only_in_source)}</div>
+                </div>
+            `;
+            
+            // Missing assets section
+            if (details.missing_from_master.length > 0) {
+                html += `
+                    <div class="diff-section">
+                        <div class="diff-section-header">
+                            Assets in ${reconciliationData.summary.master_source} but missing from ${source} (${details.count_missing_from_master})
+                        </div>
+                `;
+                
+                // Use detailed info if available
+                if (details.missing_details) {
+                    details.missing_details.forEach(asset => {
+                        html += `<div class="diff-line removed">${asset.identifier}`;
+                        // Show asset details if available
+                        if (asset.details && Object.keys(asset.details).length > 0) {
+                            const detailsStr = Object.entries(asset.details)
+                                .map(([k, v]) => `${k}: ${v}`)
+                                .join(', ');
+                            html += ` (${detailsStr})`;
+                        }
+                        html += `</div>`;
+                    });
+                } else {
+                    // Fallback to simple list
+                    details.missing_from_master.forEach(asset => {
+                        html += `<div class="diff-line removed">${asset}</div>`;
+                    });
+                }
+                
+                html += '</div>';
+            }
+            
+            // Orphaned assets section
+            if (details.found_only_in_source.length > 0) {
+                html += `
+                    <div class="diff-section">
+                        <div class="diff-section-header">
+                            Assets only in ${source} (orphaned) (${details.count_found_only_in_source})
+                        </div>
+                `;
+                
+                // Use detailed info if available
+                if (details.orphaned_details) {
+                    details.orphaned_details.forEach(asset => {
+                        html += `<div class="diff-line added">${asset.identifier}`;
+                        // Show asset details if available
+                        if (asset.details && Object.keys(asset.details).length > 0) {
+                            const detailsStr = Object.entries(asset.details)
+                                .map(([k, v]) => `${k}: ${v}`)
+                                .join(', ');
+                            html += ` (${detailsStr})`;
+                        }
+                        html += `</div>`;
+                    });
+                } else {
+                    // Fallback to simple list
+                    details.found_only_in_source.forEach(asset => {
+                        html += `<div class="diff-line added">${asset}</div>`;
+                    });
+                }
+                
+                html += '</div>';
+            }
+            
+            // No differences
+            if (details.missing_from_master.length === 0 && details.found_only_in_source.length === 0) {
+                html += `
+                    <div class="diff-section">
+                        <div class="diff-section-header" style="background: #d1f2d1; border-color: #a8d8a8; color: #28a745;">
+                            ✓ Perfect match! All assets are synchronized.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            diffView.innerHTML = html;
+        }
+        
+        function showTableView(source, details, diffView) {
+            let html = `
+                <div class="diff-section-header">
+                    Comparing ${reconciliationData.summary.master_source} ↔ ${source}
+                </div>
+            `;
+            
+            // Collect all assets with their status
+            const allAssets = [];
+            
+            // Add matched assets
+            if (details.matched_assets) {
+                details.matched_assets.forEach(assetId => {
+                    const masterDetails = reconciliationData.assets?.[reconciliationData.summary.master_source]?.[assetId] || {};
+                    const sourceDetails = reconciliationData.assets?.[source]?.[assetId] || {};
+                    
+                    allAssets.push({
+                        hostname: assetId,
+                        status: 'matched',
+                        ...masterDetails,
+                        ...sourceDetails
+                    });
+                });
+            }
+            
+            // Add missing assets
+            if (details.missing_details) {
+                details.missing_details.forEach(asset => {
+                    allAssets.push({
+                        hostname: asset.identifier,
+                        status: 'missing',
+                        ...asset.details
+                    });
+                });
+            } else if (details.missing_from_master) {
+                details.missing_from_master.forEach(assetId => {
+                    const masterDetails = reconciliationData.assets?.[reconciliationData.summary.master_source]?.[assetId] || {};
+                    allAssets.push({
+                        hostname: assetId,
+                        status: 'missing',
+                        ...masterDetails
+                    });
+                });
+            }
+            
+            // Add orphaned assets
+            if (details.orphaned_details) {
+                details.orphaned_details.forEach(asset => {
+                    allAssets.push({
+                        hostname: asset.identifier,
+                        status: 'orphaned',
+                        ...asset.details
+                    });
+                });
+            } else if (details.found_only_in_source) {
+                details.found_only_in_source.forEach(assetId => {
+                    const sourceDetails = reconciliationData.assets?.[source]?.[assetId] || {};
+                    allAssets.push({
+                        hostname: assetId,
+                        status: 'orphaned',
+                        ...sourceDetails
+                    });
+                });
+            }
+            
+            // Get all unique columns
+            const columns = new Set(['hostname', 'status']);
+            allAssets.forEach(asset => {
+                Object.keys(asset).forEach(key => columns.add(key));
+            });
+            
+            // Remove hostname and status from other columns as they're shown first
+            columns.delete('hostname');
+            columns.delete('status');
+            const otherColumns = Array.from(columns).sort();
+            
+            // Build table
+            html += `
+                <table class="asset-table">
+                    <thead>
+                        <tr>
+                            <th>Hostname</th>
+                            <th>Status</th>
+                            ${otherColumns.map(col => `<th>${col.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            allAssets.sort((a, b) => {
+                // Sort by status first (matched, missing, orphaned), then by hostname
+                const statusOrder = { matched: 0, missing: 1, orphaned: 2 };
+                if (statusOrder[a.status] !== statusOrder[b.status]) {
+                    return statusOrder[a.status] - statusOrder[b.status];
+                }
+                return a.hostname.localeCompare(b.hostname);
+            });
+            
+            allAssets.forEach(asset => {
+                const rowClass = asset.status === 'missing' ? 'asset-missing' : 
+                               asset.status === 'orphaned' ? 'asset-orphaned' : '';
+                
+                html += `
+                    <tr class="${rowClass}">
+                        <td><strong>${asset.hostname}</strong></td>
+                        <td>
+                            <span class="asset-status status-${asset.status}">
+                                ${asset.status}
+                            </span>
+                        </td>
+                        ${otherColumns.map(col => `<td>${asset[col] || '-'}</td>`).join('')}
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; font-size: 14px; color: #666;">
+                    Total: ${allAssets.length} assets 
+                    (${allAssets.filter(a => a.status === 'matched').length} matched, 
+                     ${allAssets.filter(a => a.status === 'missing').length} missing, 
+                     ${allAssets.filter(a => a.status === 'orphaned').length} orphaned)
+                </div>
+            `;
+            
+            diffView.innerHTML = html;
+        }
+        
+        function showTooltip(event, text) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.textContent = text;
+            tooltip.style.left = event.pageX + 10 + 'px';
+            tooltip.style.top = event.pageY - 25 + 'px';
+            tooltip.style.opacity = 1;
+        }
+        
+        function hideTooltip() {
+            document.getElementById('tooltip').style.opacity = 0;
+        }
+    </script>
+</body>
+</html>

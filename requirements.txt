@@ -1,0 +1,4 @@
+# AssetCon CMDB Reconciliation System
+# Python 3.7+ required (uses dataclasses)
+
+# No external dependencies - uses Python standard library only

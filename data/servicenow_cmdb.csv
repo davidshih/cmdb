@@ -1,0 +1,13 @@
+hostname,ip_address,os,owner,department,location,environment,last_updated
+web-server-01,10.0.1.10,Ubuntu 22.04,WebAppTeam,Engineering,US-East,Production,2024-01-15
+web-server-02,10.0.1.11,Ubuntu 22.04,WebAppTeam,Engineering,US-East,Production,2024-01-15
+db-server-01,10.0.2.20,Windows Server 2019,DBTeam,Engineering,US-West,Production,2024-01-20
+db-server-02,10.0.2.21,Windows Server 2019,DBTeam,Engineering,US-West,Production,2024-01-20
+app-server-01,10.0.3.30,RHEL 8,AppTeam,Engineering,EU-Central,Production,2024-01-10
+app-server-02,10.0.3.31,RHEL 8,AppTeam,Engineering,EU-Central,Production,2024-01-10
+dev-workstation-01,10.0.4.40,Windows 10,DevTeam,Engineering,US-East,Development,2024-01-05
+dev-workstation-02,10.0.4.41,macOS Monterey,DevTeam,Engineering,US-East,Development,2024-01-05
+test-server-01,10.0.5.50,Ubuntu 20.04,QATeam,Quality,US-Central,Testing,2024-01-18
+legacy-system-01,10.0.6.60,Windows Server 2012,InfraTeam,Operations,US-East,Production,2023-12-01
+monitoring-server-01,10.0.7.70,Ubuntu 22.04,SecurityTeam,Security,US-East,Production,2024-01-22
+backup-server-01,10.0.8.80,Windows Server 2022,InfraTeam,Operations,US-West,Production,2024-01-25

@@ -1,0 +1,12 @@
+hostname,ip_address,labels,process_count,network_connections,risk_score,last_activity
+web-server-01,10.0.1.10,"Production,Web,Linux",125,450,Low,2024-01-30 10:00:00
+web-server-02,10.0.1.11,"Production,Web,Linux",130,480,Low,2024-01-30 10:05:00
+db-server-01,10.0.2.20,"Production,Database,Windows",85,250,Medium,2024-01-30 10:10:00
+db-server-02,10.0.2.21,"Production,Database,Windows",88,260,Medium,2024-01-30 10:15:00
+app-server-01,10.0.3.30,"Production,Application,Linux",200,800,Low,2024-01-30 10:20:00
+app-server-02,10.0.3.31,"Production,Application,Linux",195,750,Low,2024-01-30 10:25:00
+monitoring-server-01,10.0.7.70,"Production,Security,Linux",350,1200,Low,2024-01-30 10:30:00
+backup-server-01,10.0.8.80,"Production,Backup,Windows",45,150,Low,2024-01-30 10:35:00
+unauthorized-vm-01,10.0.11.110,"Unknown,Suspicious",500,2000,High,2024-01-30 10:40:00
+crypto-miner-01,10.0.12.120,"Unknown,Malicious",800,5000,Critical,2024-01-30 10:45:00
+iot-device-01,10.0.13.130,"IoT,Unmanaged",5,20,Medium,2024-01-30 10:50:00
